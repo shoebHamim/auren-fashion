@@ -1,0 +1,5 @@
+{
+  "extends": "@auren/config/tsconfig/node.json",
+  "include": ["*.js", "*.ts"],
+  "exclude": ["node_modules", "apps", "packages"]
+}

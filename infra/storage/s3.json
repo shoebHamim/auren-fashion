@@ -1,0 +1,13 @@
+{
+  "identities": [
+    {
+      "name": "auren",
+      "credentials": [{ "accessKey": "auren", "secretKey": "auren-dev-secret" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    },
+    {
+      "name": "anonymous",
+      "actions": ["Read:auren-public-media"]
+    }
+  ]
+}

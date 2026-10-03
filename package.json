@@ -1,0 +1,32 @@
+{
+  "name": "auren",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.28.3",
+  "engines": {
+    "node": ">=24.0.0 <25.0.0",
+    "pnpm": ">=11.28.0 <12.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm infra:up && pnpm db:migrate && pnpm db:seed && turbo run dev dev:worker",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "test:e2e": "turbo run test:e2e",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "infra:up": "docker compose up -d --wait && ./infra/storage/init.sh",
+    "infra:down": "docker compose down",
+    "db:generate": "pnpm --filter @auren/db db:generate",
+    "db:migrate": "pnpm --filter @auren/db db:migrate",
+    "db:seed": "pnpm --filter @auren/db db:seed"
+  },
+  "devDependencies": {
+    "@auren/config": "workspace:*",
+    "prettier": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:"
+  }
+}

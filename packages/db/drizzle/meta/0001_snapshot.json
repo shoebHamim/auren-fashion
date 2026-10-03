@@ -1,0 +1,190 @@
+{
+  "id": "259545f2-8326-4397-a4b8-6fecc386ee5e",
+  "prevId": "3794fa57-d6c6-488c-a050-018d72b60222",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.store_settings": {
+      "name": "store_settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "smallint",
+          "primaryKey": true,
+          "notNull": true,
+          "default": 1
+        },
+        "store_name": {
+          "name": "store_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Auren'"
+        },
+        "legal_name": {
+          "name": "legal_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tax_registration_id": {
+          "name": "tax_registration_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'USD'"
+        },
+        "currency_exponent": {
+          "name": "currency_exponent",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'UTC'"
+        },
+        "order_number_prefix": {
+          "name": "order_number_prefix",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'AU'"
+        },
+        "return_window_days": {
+          "name": "return_window_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 14
+        },
+        "low_stock_default": {
+          "name": "low_stock_default",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
+        },
+        "payment_hold_minutes": {
+          "name": "payment_hold_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 30
+        },
+        "unpaid_order_cancel_hours": {
+          "name": "unpaid_order_cancel_hours",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 24
+        },
+        "cod_enabled": {
+          "name": "cod_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "cod_max_order_amount": {
+          "name": "cod_max_order_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cod_requires_review": {
+          "name": "cod_requires_review",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "store_settings_singleton": {
+          "name": "store_settings_singleton",
+          "value": "\"store_settings\".\"id\" = 1"
+        },
+        "store_settings_currency_exponent": {
+          "name": "store_settings_currency_exponent",
+          "value": "\"store_settings\".\"currency_exponent\" BETWEEN 0 AND 4"
+        },
+        "store_settings_cod_max_positive": {
+          "name": "store_settings_cod_max_positive",
+          "value": "\"store_settings\".\"cod_max_order_amount\" IS NULL OR \"store_settings\".\"cod_max_order_amount\" > 0"
+        },
+        "store_settings_positive_windows": {
+          "name": "store_settings_positive_windows",
+          "value": "\"store_settings\".\"return_window_days\" >= 0 AND \"store_settings\".\"low_stock_default\" >= 0 AND \"store_settings\".\"payment_hold_minutes\" > 0 AND \"store_settings\".\"unpaid_order_cancel_hours\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

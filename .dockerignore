@@ -1,0 +1,13 @@
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/coverage
+**/test-results
+**/playwright-report
+.git
+.env
+.env.*
+!.env.example
+infra/deploy/.env
+infra/deploy/certs

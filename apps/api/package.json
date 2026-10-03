@@ -1,0 +1,45 @@
+{
+  "name": "@auren/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/server.ts",
+    "dev:worker": "tsx watch --clear-screen=false src/worker.ts",
+    "build": "tsup",
+    "start": "node dist/server.js",
+    "start:worker": "node dist/worker.js",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --project unit",
+    "test:integration": "vitest run --project integration"
+  },
+  "dependencies": {
+    "@auren/contracts": "workspace:*",
+    "@auren/db": "workspace:*",
+    "@hono/node-server": "catalog:",
+    "@hono/zod-openapi": "catalog:",
+    "drizzle-orm": "catalog:",
+    "graphile-worker": "catalog:",
+    "hono": "catalog:",
+    "pg": "catalog:",
+    "pino": "catalog:",
+    "uuidv7": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@auren/config": "workspace:*",
+    "@testcontainers/postgresql": "catalog:",
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "eslint": "catalog:",
+    "pino-pretty": "catalog:",
+    "tsup": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

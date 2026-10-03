@@ -1,0 +1,18 @@
+{
+  "extends": "@auren/config/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "src",
+    "e2e",
+    ".next/types/**/*.ts",
+    "*.ts",
+    "*.mjs",
+    "eslint.config.js"
+  ],
+  "exclude": ["node_modules"]
+}

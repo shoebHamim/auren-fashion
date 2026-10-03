@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds & caches
+dist/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+
+# tests
+coverage/
+test-results/
+playwright-report/
+blob-report/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+# logs & OS
+*.log
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# deployment secrets
+infra/deploy/.env
+infra/deploy/certs/

@@ -181,7 +181,7 @@ sequenceDiagram
 ### 4.6 File and image storage
 
 - **`StorageService` interface:** `putObject`, `getSignedUploadUrl`, `getSignedDownloadUrl`, `delete`, `publicUrl`.
-  - The adapter is **S3-compatible** (AWS S3, Cloudflare R2, Backblaze B2, MinIO locally), so there is no lock-in.
+  - The adapter is **S3-compatible** (AWS S3, Cloudflare R2, Backblaze B2, SeaweedFS locally), so there is no lock-in.
   - Business modules only store `media_assets.storage_key`. They never store URLs or bucket names.
 - **Two buckets:**
   - `public-media`: product and category images, served through a CDN, immutable keys like `products/{assetId}/{hash}.jpg`.
@@ -220,7 +220,7 @@ Versions are the latest stable releases as of 2026-10-03. They are **pinned thro
 |---|---|---|---|
 | Runtime | **Node.js 24 LTS** | 24.x | The local Node 23 has been **end-of-life since 2025-06** and must not be used. 26 becomes LTS on 2026-10-28; move to it after a few patch releases. Pinned with `.nvmrc` plus `engines` plus `engineStrict` |
 | Package manager / monorepo | **pnpm 11** workspaces + **Turborepo 2** | pnpm 11.x, turbo 2.11.x | Strict `node_modules` (undeclared dependencies can't be imported, which enforces the web ↛ db rule), catalogs for single-version deps, cached task graph. pnpm 12 waits until `turbo prune` support is confirmed |
-| Language | **TypeScript** (strict) | 7.x for `tsc` / `next build` (TS 6 alias for typescript-eslint until TS 7.1 exposes its API) | Type safety end-to-end. Confirm the TS 7 tooling compatibility at Phase 0; fall back to TS 6 if anything breaks |
+| Language | **TypeScript** (strict) | **6.0.x** (verified in Phase 0: typescript-eslint 8.71 supports TypeScript `<6.1`, so TS 7 is deferred) | Type safety end-to-end. One TypeScript version across the repo. Move to TS 7 once typescript-eslint supports it |
 | Web | **Next.js 16** (App Router, `cacheComponents`, `proxy.ts`) + **React 19** | next 16.3.x, react 19.x | SSR and caching for SEO pages, streaming, one app for storefront and admin |
 | UI | **Tailwind CSS 4** + **shadcn/ui** (copied components) + Radix primitives | tailwind 4.3.x, shadcn CLI 4.x | Owned components with no runtime UI library lock-in |
 | Admin data and forms | TanStack Query, TanStack Table, React Hook Form + Zod resolver | latest | Client-heavy admin grids and forms, sharing the API's Zod schemas |
@@ -237,7 +237,7 @@ Versions are the latest stable releases as of 2026-10-03. They are **pinned thro
 | Errors | Sentry SDK (web + api + worker) — optional SaaS, or self-hosted GlitchTip | — | §24 |
 | Testing | Vitest, Testcontainers (Postgres), Playwright | — | §23 |
 | Lint and format | ESLint (flat config, typescript-eslint **type-aware**: `no-floating-promises`, `no-misused-promises`) + Prettier | — | Type-aware promise rules matter for transactional code. `next lint` was removed in Next 16, so ESLint runs directly |
-| Local infrastructure | Docker Compose: postgres:18, minio, mailpit | — | One-command local environment. Use PG 18 client tools from the container; the local `psql 14` is too old for `pg_dump` against 18 and reaches EOL on 2026-11-12 |
+| Local infrastructure | Docker Compose: postgres:18, **SeaweedFS** (S3 API), Mailpit | — | One-command local environment (`pnpm infra:up`). SeaweedFS replaced MinIO in Phase 0 because MinIO no longer publishes container images; production uses Cloudflare R2. Use PG 18 client tools from the container; the local `psql 14` is too old for `pg_dump` against 18 and reaches EOL on 2026-11-12 |
 
 ---
 
@@ -273,7 +273,7 @@ auren/
 │   ├── contracts/                    # Zod schemas (requests/responses/DTOs), inferred types, enums, error codes, permission catalog, money format helpers
 │   └── config/                       # tsconfig bases, ESLint flat configs, Prettier config
 ├── docs/PLAN.md
-├── docker-compose.yml                # postgres:18, minio, mailpit
+├── docker-compose.yml                # postgres:18, seaweedfs (S3), mailpit
 ├── .nvmrc · package.json (packageManager, engines) · pnpm-workspace.yaml (packages, catalogs, allowBuilds) · turbo.json · tsconfig.json
 ```
 
@@ -929,7 +929,7 @@ Better Auth runs **inside the Hono API**, mounted at `/api/auth/*`. It uses the 
 
 ### 10.2 Cookies, origins and CSRF
 
-- **Same-origin by design.** The edge routes `/api/*` to the API (§4.1). In development, Next.js `rewrites` forward `/api/:path*` to `http://localhost:4000/api/:path*`.
+- **Same-origin by design.** The edge routes `/api/*` to the API (§4.1). In development, Next.js `rewrites` forward `/api/:path*` to `http://localhost:4000/api/:path*`. Verified in Phase 0: Next 16 rewrites pass through multiple `Set-Cookie` headers and forward `Origin`, `Cookie` and request bodies.
 - Better Auth settings:
   - `baseURL = WEB_ORIGIN`
   - `trustedOrigins = [WEB_ORIGIN]`
@@ -1896,7 +1896,8 @@ Database triggers are not used. They see rows, not intent, and they have no acto
 - **Input validation:** Zod on every input (body, query, params, relevant headers), with strict objects (unknown keys rejected), max lengths and numeric bounds. Environment variables are validated at boot.
 - **PCI DSS:** card data never touches Auren (hosted payment page or provider elements, SAQ-A). Only provider references and last-4/brand metadata are stored, if supplied.
 - **Database:**
-  - The app connects as `auren_app` (DML only, restricted on append-only tables). Migrations run as `auren_migrator`.
+  - The app connects as `auren_app` (DML only on `public`, restricted on append-only tables). Migrations run as `auren_migrator`.
+  - Exception, verified in Phase 0: `auren_app` owns the `graphile_worker` job-queue schema and has `CREATE` on the database. graphile-worker's row-level security only lets the schema owner enqueue, and its bootstrap always runs `CREATE SCHEMA IF NOT EXISTS`. It still has no DDL rights on `public`.
   - The app never uses a superuser account.
   - Connections to the database use TLS.
 - **Secrets:** the Better Auth secret, DB URLs, gateway keys, webhook secrets, the revalidation HMAC secret, S3 keys and email keys. Each environment has its own. Document the rotation procedure.
@@ -1914,7 +1915,7 @@ Database triggers are not used. They see rows, not intent, and they have no acto
 | Integration | Vitest + **Testcontainers (postgres:18)** + Hono `app.request()` | Route → middleware → service → real Postgres: transactions, constraints, locking, auth guards, idempotency, webhooks (fake provider) | One migrated **template DB**. Each test worker clones it (`CREATE DATABASE … TEMPLATE`), and tables are truncated between tests |
 | Concurrency | Vitest integration with parallel connections | The races that matter (§23.2) | Same |
 | Contract | OpenAPI snapshot plus `tsc` on the `hc` clients | Breaking-change detection; every `/admin` route declares a permission | — |
-| E2E | **Playwright** against docker compose (web + api + worker + postgres + minio + mailpit) with the **fake payment provider** | Critical customer and staff journeys in a real browser | Seeded per run |
+| E2E | **Playwright** against docker compose (web + api + worker + postgres + seaweedfs + mailpit) with the **fake payment provider** | Critical customer and staff journeys in a real browser | Seeded per run |
 
 ### 23.2 Critical workflows
 
@@ -2015,6 +2016,32 @@ flowchart TB
 - Cons: two platforms, latency between web and api if they run in different regions, and vendor-specific features.
 - The design supports both options.
 
+#### 25.2.1 Chosen for launch (2026-10-03): a single VPS + Cloudflare
+
+This is Option A on **one VPS**. Everything runs in Docker Compose on that machine, with Cloudflare in front.
+
+| Component | Where it runs |
+|---|---|
+| Caddy (TLS, path routing, `/_internal` blocked), `web`, `api`, `worker` | Containers on the VPS |
+| **PostgreSQL 18** | Container on the VPS. Named volume, **not exposed publicly**, reachable only on the internal Docker network |
+| `public-media` and `private-docs` buckets | **Cloudflare R2** (S3-compatible, no egress fees). `public-media` is served through an R2 custom domain behind the Cloudflare cache. `private-docs` is reachable only through presigned URLs |
+| DNS, CDN, DDoS protection | **Cloudflare** proxy, SSL mode "Full (strict)" with a Cloudflare origin certificate on Caddy |
+| Backups | A private **R2 bucket** `backups` (separate credentials) |
+
+**What this changes compared with the managed-Postgres assumption:**
+- **Backups are our responsibility.**
+  - At launch: nightly `pg_dump -Fc` to R2 with 30-day retention.
+  - Phase 11: add **WAL-G** WAL archiving to R2 for point-in-time recovery (RPO ≤ 5 min). Until then, the RPO is 24 h.
+  - The quarterly restore drill restores into a scratch container.
+- **Client IPs:** Caddy trusts `CF-Connecting-IP` **only** from Cloudflare's published IP ranges. This feeds rate limits, the audit log and Better Auth `trustedProxies`.
+- **VPS baseline:**
+  - At least 2 vCPU and 4 GB RAM.
+  - Ubuntu LTS with unattended security upgrades.
+  - A firewall allowing only 22/80/443, with 80 and 443 ideally limited to Cloudflare IPs.
+  - SSH keys only.
+  - Docker log rotation.
+- **Staging:** a second Compose project on the same VPS (separate database, buckets and subdomain) is acceptable at first. Move it to a separate small VPS if resource contention appears.
+
 ### 25.3 Build and release
 
 - **Images:** multi-stage Dockerfiles using `turbo prune --docker`, Next `output: 'standalone'`, non-root users, and pinned `node:24-slim` base images.
@@ -2096,7 +2123,7 @@ The size estimates below are relative (S/M/L). Calendar estimates depend on team
 
 - **Goal:** a running, tested, deployable skeleton that proves the architecture's riskiest plumbing: same-origin routing, cookies, migrations and CI.
 - **Features:**
-  - **Setup:** `git init`. pnpm 11 workspace with catalogs, Turborepo, `packages/config`. Node 24 pinned (`.nvmrc`, `engines`). Docker Compose (pg18, minio, mailpit).
+  - **Setup:** `git init`. pnpm 11 workspace with catalogs, Turborepo, `packages/config`. Node 24 pinned (`.nvmrc`, `engines`). Docker Compose (pg18, SeaweedFS, mailpit).
   - **API skeleton:** env validation, pino, request ID, error envelope, `AppError`, transaction helper with retry, money library, OpenAPI document, health and ready endpoints.
   - **Database and contracts:** `packages/db` with drizzle-kit and a custom SQL migration (extensions, DB roles `auren_app`/`auren_migrator`). `packages/contracts` (error codes, money, pagination).
   - **Web skeleton:** Next 16 with Tailwind 4 and shadcn, layout shells, a server fetch helper (cookie and request-ID forwarding), typed `hc` clients, dev rewrites.
@@ -2465,7 +2492,9 @@ Ordered by measured demand; see §28.
 | 2026-10-03 | Online payments at launch: **Cash on Delivery + one online gateway** | User |
 | 2026-10-03 | **POS excluded from the MVP** (the design must still support it) | User |
 | 2026-10-03 | **Guest checkout allowed** | User |
-| 2026-10-03 | D1–D29 proposed as above; pending review | Plan |
+| 2026-10-03 | D1–D29 proposed as above; plan reviewed by the owner | Plan / User |
+| 2026-10-03 | **Hosting (Q12):** a single VPS running Docker Compose, with Postgres self-hosted on it, plus Cloudflare R2 and the Cloudflare CDN (§25.2.1) | User |
+| 2026-10-03 | **TypeScript 6.0.x** instead of 7.x: typescript-eslint supports only TypeScript `<6.1` (verified in Phase 0) | Phase 0 |
 
 ---
 

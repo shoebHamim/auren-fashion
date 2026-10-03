@@ -1,0 +1,4 @@
+{
+  "extends": "@auren/config/tsconfig/node.json",
+  "include": ["src", "eslint.config.js", "vitest.config.ts"]
+}

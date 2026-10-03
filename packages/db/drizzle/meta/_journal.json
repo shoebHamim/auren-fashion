@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791040464580,
+      "tag": "0000_platform_setup",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791040478873,
+      "tag": "0001_store_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791040937828,
+      "tag": "0002_system_heartbeats",
+      "breakpoints": true
+    }
+  ]
+}
